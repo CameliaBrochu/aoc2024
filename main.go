@@ -68,11 +68,39 @@ func (d day) run1(test bool) {
 	fmt.Println(diffTotal)
 }
 
-func (d day) run2() {
+func (d day) run2(test bool) {
+	data := readProblemInput("01", test)
+	lines := strings.Split(data, "\n")
 
+	var list1 []int
+	list2 := make(map[int]int)
+
+	for _, v := range lines {
+		values := strings.Fields(v)
+
+		first, err := strconv.Atoi(values[0])
+		if err != nil {
+			panic(err)
+		}
+		list1 = append(list1, first)
+
+		second, err := strconv.Atoi(values[1])
+		if err != nil {
+			panic(err)
+		}
+
+		list2[second] = list2[second] + 1
+	}
+
+	total := 0
+	for _, v := range list1 {
+		total += v * list2[v]
+	}
+
+	fmt.Println(total)
 }
 
 func main() {
 	currentDay := day{}
-	currentDay.run1(false)
+	currentDay.run2(false)
 }
