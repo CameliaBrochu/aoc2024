@@ -2,17 +2,11 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
-
-func checkError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
 
 func readProblemInput(day string, test bool) string {
 	var sb strings.Builder
@@ -32,83 +26,82 @@ func readProblemInput(day string, test bool) string {
 	return string(data)
 }
 
-type Directions int
-
-const (
-	UP Directions = iota
-	DOWN
-)
-
-func isLevelSafe(levels []string) bool {
-
-	// Check first change
-	firstLevel, err := strconv.ParseFloat(levels[0], 32)
-	checkError(err)
-
-	secondLevel, err := strconv.ParseFloat(levels[1], 32)
-	checkError(err)
-
-	if math.Abs(firstLevel-secondLevel) < 1 || math.Abs(firstLevel-secondLevel) > 3 {
-		return false
-	}
-
-	direction := UP
-	if firstLevel > secondLevel {
-		direction = DOWN
-	}
-
-	// Check the rest
-	for i, v := range levels {
-		// Skip first because we already checked it
-		if i == 0 || i == len(levels)-1 {
-			continue
-		}
-
-		level, err := strconv.ParseFloat(v, 32)
-		checkError(err)
-
-		nextLevel, err := strconv.ParseFloat(levels[i+1], 32)
-		checkError(err)
-
-		diff := level - nextLevel
-		if math.Abs(diff) < 1 || math.Abs(diff) > 3 {
-			return false
-		}
-
-		if direction == UP && diff > 0 {
-			return false
-		} else if direction == DOWN && diff < 0 {
-			return false
-		}
-	}
-
-	return true
-}
-
 type day struct {
 }
 
 func (d day) run1(test bool) {
 
-	data := readProblemInput("02", test)
-	reports := strings.Split(data, "\n")
-	safeCount := 0
-	for _, v := range reports {
-		levels := strings.Fields(v)
+	data := readProblemInput("03", test)
 
-		if isLevelSafe(levels) {
-			safeCount++
-		}
+	r, _ := regexp.Compile(`mul\((\d{1,3}),(\d{1,3})\)`)
+	muls := r.FindAllStringSubmatch(data, -1)
+
+	total := 0
+	for _, m := range muls {
+		num1, _ := strconv.Atoi(m[1])
+		num2, _ := strconv.Atoi(m[2])
+
+		total += num1 * num2
 	}
 
-	fmt.Println(safeCount)
+	fmt.Println(total)
+}
+
+type Instructions int
+
+const (
+	DO Instructions = iota
+	DONT
+)
+
+func getInstructionLength(length int) Instructions {
+	if length == 4 {
+		return DO
+	} else {
+		return DONT
+	}
 }
 
 func (d day) run2(test bool) {
+	data := readProblemInput("03", test)
 
+	r, _ := regexp.Compile(`mul\((\d{1,3}),(\d{1,3})\)`)
+	muls := r.FindAllStringSubmatchIndex(data, -1)
+
+	r2, _ := regexp.Compile(`don't\(\)|do\(\)`)
+	instructions := r2.FindAllStringSubmatchIndex(data, -1)
+
+	total := 0
+	currentInstruction := DO
+
+	done := false
+	i1, i2 := 0, 0
+	for !done {
+		if i1 == len(muls)-1 {
+			done = true
+		}
+
+		if instructions[i2][0] < muls[i1][0] {
+			currentInstruction = getInstructionLength(instructions[i2][1] - instructions[i2][0])
+			if i2 != len(instructions)-1 {
+				i2++
+			}
+		}
+
+		if currentInstruction == DO {
+			num1, _ := strconv.Atoi(data[muls[i1][2]:muls[i1][3]])
+			num2, _ := strconv.Atoi(data[muls[i1][4]:muls[i1][5]])
+
+			total += num1 * num2
+		}
+
+		i1++
+	}
+
+	fmt.Println(total)
 }
 
 func main() {
 	currentDay := day{}
-	currentDay.run1(false)
+	currentDay.run2(false)
 }
