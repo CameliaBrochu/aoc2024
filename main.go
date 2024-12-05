@@ -2,11 +2,17 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 )
+
+func checkError(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
 
 func readProblemInput(day string, test bool) string {
 	var sb strings.Builder
@@ -26,81 +32,83 @@ func readProblemInput(day string, test bool) string {
 	return string(data)
 }
 
+type Directions int
+
+const (
+	UP Directions = iota
+	DOWN
+)
+
+func isLevelSafe(levels []string) bool {
+
+	// Check first change
+	firstLevel, err := strconv.ParseFloat(levels[0], 32)
+	checkError(err)
+
+	secondLevel, err := strconv.ParseFloat(levels[1], 32)
+	checkError(err)
+
+	if math.Abs(firstLevel-secondLevel) < 1 || math.Abs(firstLevel-secondLevel) > 3 {
+		return false
+	}
+
+	direction := UP
+	if firstLevel > secondLevel {
+		direction = DOWN
+	}
+
+	// Check the rest
+	for i, v := range levels {
+		// Skip first because we already checked it
+		if i == 0 || i == len(levels)-1 {
+			continue
+		}
+
+		level, err := strconv.ParseFloat(v, 32)
+		checkError(err)
+
+		nextLevel, err := strconv.ParseFloat(levels[i+1], 32)
+		checkError(err)
+
+		diff := level - nextLevel
+		if math.Abs(diff) < 1 || math.Abs(diff) > 3 {
+			return false
+		}
+
+		if direction == UP && diff > 0 {
+			return false
+		} else if direction == DOWN && diff < 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
 type day struct {
 }
 
 func (d day) run1(test bool) {
-	data := readProblemInput("01", test)
-	lines := strings.Split(data, "\n")
-	var list1 []int
-	var list2 []int
-	for _, v := range lines {
-		values := strings.Fields(v)
 
-		first, err := strconv.Atoi(values[0])
-		if err != nil {
-			panic(err)
-		}
-		list1 = append(list1, first)
+	data := readProblemInput("02", test)
+	reports := strings.Split(data, "\n")
+	safeCount := 0
+	for _, v := range reports {
+		levels := strings.Fields(v)
 
-		second, err := strconv.Atoi(values[1])
-		if err != nil {
-			panic(err)
+		if isLevelSafe(levels) {
+			safeCount++
 		}
-		list2 = append(list2, second)
 	}
 
-	slices.Sort(list1)
-	slices.Sort(list2)
-
-	diffTotal := 0
-	for i, v := range list1 {
-		diff := 0
-		if list2[i] > v {
-			diff = list2[i] - v
-		} else {
-			diff = v - list2[i]
-		}
-
-		diffTotal += diff
-	}
-
-	fmt.Println(diffTotal)
+	fmt.Println(safeCount)
 }
 
 func (d day) run2(test bool) {
-	data := readProblemInput("01", test)
-	lines := strings.Split(data, "\n")
 
-	var list1 []int
-	list2 := make(map[int]int)
-
-	for _, v := range lines {
-		values := strings.Fields(v)
-
-		first, err := strconv.Atoi(values[0])
-		if err != nil {
-			panic(err)
-		}
-		list1 = append(list1, first)
-
-		second, err := strconv.Atoi(values[1])
-		if err != nil {
-			panic(err)
-		}
-
-		list2[second] = list2[second] + 1
-	}
-
-	total := 0
-	for _, v := range list1 {
-		total += v * list2[v]
-	}
-
-	fmt.Println(total)
 }
 
 func main() {
 	currentDay := day{}
-	currentDay.run2(false)
+	currentDay.run1(false)
 }
